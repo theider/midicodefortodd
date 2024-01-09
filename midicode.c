@@ -24,9 +24,11 @@ void loop() {
   }
   if (digitalRead(BUTTON_PIN_2) == LOW && patchNum >= 1) {
     // Next Program
+    //digitalWrite(LED_PIN, HIGH );
     patchNum--;
     MIDI.sendProgramChange(patchNum, 1);
     delay(200);
+    //digitalWrite(LED_PIN, LOW );
   }
 }
 
