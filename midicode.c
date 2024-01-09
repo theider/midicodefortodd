@@ -8,6 +8,9 @@ byte patchNum = 0;
 #define BUTTON_PIN_2 3
 #define LED_PIN 13
 
+#define BUTTON_DEBOUNCE_SHORT_MS 500
+#define BUTTON_DEBOUNCE_LONG_MS 500
+
 void setup() {
   pinMode(BUTTON_PIN_1, INPUT_PULLUP);
   pinMode(BUTTON_PIN_2, INPUT_PULLUP);
@@ -16,7 +19,7 @@ void setup() {
 }
 
 void loop() {
-  if (digitalRead(BUTTON_PIN_1) == LOW && patchNum < 99) {
+  if (digitalRead(BUTTON_PIN_1) == LOW && patchNum < 24) {
     // Next Program
     patchNum++;
     MIDI.sendProgramChange(patchNum, 1);
