@@ -17,11 +17,6 @@ ButtonState buttonState1 = Idle;
 ButtonState buttonState2 = Idle;
 unsigned long buttonPressedTime1 = 0;
 unsigned long buttonPressedTime2 = 0;
-bool longPressHandled1 = false;
-bool longPressHandled2 = false;
-unsigned long debounceDelay = 50; // Adjust this value as needed
-const unsigned long minPressTime = 50; // Minimum press time in milliseconds
-const unsigned long minRetriggerTime = 1250; // Minimum re-trigger time in milliseconds
 
 void setup() {
   pinMode(BUTTON_PIN_1, INPUT_PULLUP);
@@ -34,49 +29,62 @@ void setup() {
   MIDI.begin(MIDI_CHANNEL_OMNI);
 }
 
-void handleButton(ButtonState &buttonState, unsigned long &buttonPressedTime, bool &longPressHandled, int buttonPin, int ledPin, int oppositeLedPin) {
+void loop() {
   unsigned long currentTime = millis();
 
-  switch (buttonState) {
-    case Idle:
-      if (digitalRead(buttonPin) == LOW) {
-        buttonState = Pressed;
-        buttonPressedTime = currentTime;
-        longPressHandled = false;
-      }
-      break;
-
-    case Pressed:
-      if (digitalRead(buttonPin) == HIGH) {
-        if (currentTime - buttonPressedTime < debounceDelay) {
-          // Ignore noise during debouncing
-        } else if (currentTime - buttonPressedTime < 500) {
-          if (patchNum == (buttonPin == BUTTON_PIN_1 ? 24 : 0)) {
-            patchNum = buttonPin == BUTTON_PIN_1 ? 0 : 24;
-          } else {
-            patchNum += (buttonPin == BUTTON_PIN_1) ? 1 : -1;
-          }
-          MIDI.sendProgramChange(patchNum, 1);
-          delay(200);
-        } else if (currentTime - buttonPressedTime > minRetriggerTime) {
-          buttonState = LongPress;
-          digitalWrite(PIN_5, buttonPin == BUTTON_PIN_1 ? LOW : HIGH); // Send signal to pin 5
-          digitalWrite(ledPin, HIGH);
-          digitalWrite(oppositeLedPin, LOW);
+  // Button 1
+  if (digitalRead(BUTTON_PIN_1) == LOW) {
+    if (buttonState1 == Idle) {
+      buttonState1 = Pressed;
+      buttonPressedTime1 = currentTime;
+    } else if (buttonState1 == Pressed && currentTime - buttonPressedTime1 > 1000) {
+      buttonState1 = LongPress;
+      digitalWrite(PIN_5, LOW); // Send low signal to pin 5
+      digitalWrite(LED_PIN_1, HIGH);
+      digitalWrite(LED_PIN_2, LOW);
+    }
+  } else {
+    if (buttonState1 == Pressed) {
+      if (currentTime - buttonPressedTime1 < 500) {
+        if (patchNum == 24) {
+          patchNum = 0;
+        } else {
+          patchNum++;
         }
+        MIDI.sendProgramChange(patchNum, 1);
+        delay(200);
       }
-      break;
-
-    case LongPress:
-      if (digitalRead(buttonPin) == HIGH && !longPressHandled) {
-        longPressHandled = true;
-        buttonState = Idle;
-      }
-      break;
+      buttonState1 = Idle;
+    } else if (buttonState1 == LongPress && currentTime - buttonPressedTime1 > 500) {
+      buttonState1 = Idle;
+    }
   }
-}
 
-void loop() {
-  handleButton(buttonState1, buttonPressedTime1, longPressHandled1, BUTTON_PIN_1, LED_PIN_1, LED_PIN_2);
-  handleButton(buttonState2, buttonPressedTime2, longPressHandled2, BUTTON_PIN_2, LED_PIN_2, LED_PIN_1);
+  // Button 2
+  if (digitalRead(BUTTON_PIN_2) == LOW) {
+    if (buttonState2 == Idle) {
+      buttonState2 = Pressed;
+      buttonPressedTime2 = currentTime;
+    } else if (buttonState2 == Pressed && currentTime - buttonPressedTime2 > 1000) {
+      buttonState2 = LongPress;
+      digitalWrite(PIN_5, HIGH); // Send high signal to pin 5
+      digitalWrite(LED_PIN_2, HIGH);
+      digitalWrite(LED_PIN_1, LOW);
+    }
+  } else {
+    if (buttonState2 == Pressed) {
+      if (currentTime - buttonPressedTime2 < 500) {
+        if (patchNum == 0) {
+          patchNum = 24;
+        } else {
+          patchNum--;
+        }
+        MIDI.sendProgramChange(patchNum, 1);
+        delay(200);
+      }
+      buttonState2 = Idle;
+    } else if (buttonState2 == LongPress && currentTime - buttonPressedTime2 > 500) {
+      buttonState2 = Idle;
+    }
+  }
 }
